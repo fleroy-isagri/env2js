@@ -62,6 +62,7 @@ func (w *walker) Exit(n js.INode) {
 }
 
 func GetEnvValue(path []string) (string, bool) {
+	// TODO : use settingsVariableName instead
 	computedKey := "AppSettings_"
 	computedKey += strings.Join(path, "_")
 
@@ -130,12 +131,14 @@ func main() {
 
 	settingsFilePrefix := os.Getenv(SettingsFilePrefixEnvKey)
 	//settingsFilePrefix := "example"
+	// TODO : define a default value if not define
 	if settingsFilePrefix == "" {
 		panic(SettingsFilePrefixEnvKey + " environment variable is not set")
 	}
 
 	settingsVariableName := os.Getenv(SettingsVariableNameEnvKey)
 	//settingsVariableName := "AppSettings"
+	// TODO : define a default value if not define
 	if settingsVariableName == "" {
 		panic(SettingsVariableNameEnvKey + " environment variable is not set")
 	}
