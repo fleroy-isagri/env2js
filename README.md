@@ -1,3 +1,4 @@
+
 # env2js
 
 [![GitHub Release](https://img.shields.io/github/v/release/fleroy-isagri/env2js)](https://github.com/fleroy-isagri/env2js/releases)
@@ -6,11 +7,13 @@
 [![LICENSE](https://img.shields.io/github/license/fleroy-isagri/env2js)](LICENSE)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/fleroy-isagri/env2js/build.yml?branch=main)](https://github.com/fleroy-isagri/env2js/actions?query=workflow%3Abuild+branch%3Amain)
 
-Env2js est une utilitaire permettant d'écrire dans un fichier de configuration en Javascript, la valeurs de variables d'environment.
+env2js is a tool that will transfer environment variable to a Javascript configuration file.
 
-### Exemple :
+This is especially useful within virtual machines environments like Docker, where you want to modify the configuration based on the container environment variables.
 
-Compte tenu du fichier **config.js**
+## How it works :
+
+Given the **config.js** file :
 ```js
 const AppSettings = {
   isServed: true,
@@ -20,11 +23,11 @@ const AppSettings = {
 }
 ```
 
-Et de la **variable d’environnement** :
+and the **environment variables** :
 `AppSettings_API_apiRoot="custom/url/app"`
 
 
-Après utilisation de env2js, **config.js** vaut :
+After env2js usage, **config.js** equals :
 ```js
 const AppSettings = {
   isServed: true,
@@ -34,23 +37,23 @@ const AppSettings = {
 }
 ```
 
-### Utilisation :
+## Start developing :
 
-**1) Installer les dépendances :**
+**1) Install the dependencies :**
 
 ```bash
 go mod tidy
 ```
 
-> :information_source: Plus d'infos sur [go mod tidy](https://go.dev/ref/mod#go-mod-tidy)
+> :information_source: More informations about : [go mod tidy](https://go.dev/ref/mod#go-mod-tidy)
 
-**2) Définir les trois variables d'environments nécessaires :**
+**2) Define the three required environment variables :**
 
-**SETTINGS_FOLDER_PATH** : Dossier contenant le fichier de configuration à affecter
+**SETTINGS_FOLDER_PATH** : Folder that includes the configuration files
 
-**SETTINGS_FILE_PREFIX** : Nom du fichier avant l'extension, ex : "example.js"
+**SETTINGS_FILE_PREFIX** : File name without the extension, eg : "example.js"
 
-**SETTINGS_VARIABLE_NAME** : Nom de la clé du fichier à lire
+**SETTINGS_VARIABLE_NAME** : Key name to read inside the file
 
 
 `export SETTINGS_FOLDER_PATH=/path/to/my/config`
@@ -60,9 +63,18 @@ go mod tidy
 `export SETTINGS_VARIABLE_NAME=AppSettings`
 
 
-**3) Lancer le programme :**
+**3) Run the program :**
 
 ```bash
 go run .
 ```
-> :information_source: Plus d'infos sur [go run](https://pkg.go.dev/cmd/go#hdr-Compile_and_run_Go_program)
+> :information_source: More informations about : [go run](https://pkg.go.dev/cmd/go#hdr-Compile_and_run_Go_program)
+
+
+## Environment variables format
+
+- **String** : `AppSettings_myValue="MyValue"`
+- **Int** : `AppSettings_myInt=10`
+- **Boolean** : `AppSettings_myBool=true`
+- **Array index** : `AppSettings_MyArray_[0]="MyValue"`
+- **Nested value** : `AppSettings_MyObject_MyValue="MyValue"`
