@@ -1,0 +1,25 @@
+{
+    "[go]": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": true,
+        },
+    },
+    "[go.mod]": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": true,
+        },
+    },
+    // gopls
+    "go.useLanguageServer": true,
+    "gopls": {
+        "formatting.local": "github.com/fleroy-isagri/env2js",
+        "formatting.gofumpt": true
+    },
+    // golangci-lint  
+    "go.lintTool": "golangci-lint",
+    "go.lintFlags": [
+        "--fast"
+    ]
+}
