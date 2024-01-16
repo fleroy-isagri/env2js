@@ -18,6 +18,12 @@ const (
 	SettingsVariableNameEnvKey string = "SETTINGS_VARIABLE_NAME"
 )
 
+var (
+	settingsFolderPath   string = ""
+	settingsFilePrefix   string = ""
+	settingsVariableName string = ""
+)
+
 type walker struct {
 	currentPath         []string
 	settingVariableName string
@@ -73,19 +79,6 @@ func GetEnvValue(path []string) (string, bool) {
 		return envValue, true
 	}
 
-	// if computedKey == "AppSettings_isServed" {
-	// 	return "false", true
-	// }
-	// if computedKey == "AppSettings_API_apiVersion_versionMax" {
-	// 	return "10", true
-	// }
-	// if computedKey == "AppSettings_MyKey" {
-	// 	return "ModifiedValue", true
-	// }
-	// if computedKey == "AppSettings_MyArray_[1]" {
-	// 	return "ModifiedArrayValue2", true
-	// }
-
 	return "", false
 }
 
@@ -126,21 +119,21 @@ func DefineFilePath(settingsFolderPath string, settingsFilePrefix string) (strin
 	return settingsFilePath, nil
 }
 
-func main() {
-	settingsFolderPath := os.Getenv(SettingsFolderPathEnvKey)
+func SetConfigFileLocationValue() {
+	settingsFolderPath = os.Getenv(SettingsFolderPathEnvKey)
 	// settingsFolderPath := "./config"
 	if settingsFolderPath == "" {
 		panic(SettingsFolderPathEnvKey + " environment variable is not set")
 	}
 
-	settingsFilePrefix := os.Getenv(SettingsFilePrefixEnvKey)
+	settingsFilePrefix = os.Getenv(SettingsFilePrefixEnvKey)
 	// settingsFilePrefix := "example"
 	// TODO : define a default value if not define
 	if settingsFilePrefix == "" {
 		panic(SettingsFilePrefixEnvKey + " environment variable is not set")
 	}
 
-	settingsVariableName := os.Getenv(SettingsVariableNameEnvKey)
+	settingsVariableName = os.Getenv(SettingsVariableNameEnvKey)
 	// settingsVariableName := "AppSettings"
 	// TODO : define a default value if not define
 	if settingsVariableName == "" {
@@ -150,6 +143,10 @@ func main() {
 	fmt.Println("SettingsFolderPath:", settingsFolderPath)
 	fmt.Println("settingsFilePrefix:", settingsFilePrefix)
 	fmt.Println("SettingVariableName:", settingsVariableName)
+}
+
+func main() {
+	SetConfigFileLocationValue()
 
 	// TODO : aller chercher le nom du fichier de config dans le index.html
 	settingsFilePath, errorDefineFilePath := DefineFilePath(settingsFolderPath, settingsFilePrefix)
@@ -159,28 +156,29 @@ func main() {
 
 	// Read the JavaScript file
 	jsBytes, err := os.ReadFile(settingsFilePath)
-	if err != nil {
-		panic(err)
-	}
+	HandleError(err)
 
 	// Parse the JavaScript file
 	input := parse.NewInput(bytes.NewReader(jsBytes))
 	ast, err := js.Parse(input, js.Options{})
-	if err != nil {
-		panic(err)
-	}
+	HandleError(err)
 
 	// Analyse du code javascript et réalisation des modifications si nécessaire
 	js.Walk(&walker{settingVariableName: settingsVariableName}, ast)
-	fmt.Println("END:", ast.JS())
 
 	// Write the updated JavaScript file
 	// TODO : mettre à jour le fichier uniquement si des modifications ont été faite
 	// TODO : afficher les modifications apportées
-	err = os.WriteFile(settingsFilePath, []byte(ast.JS()), fs.ModePerm)
+	var buffer bytes.Buffer
+	ast.JS(&buffer)
+	err = os.WriteFile(settingsFilePath, buffer.Bytes(), fs.ModePerm)
+	HandleError(err)
+
+	fmt.Println(settingsFilePath + " updated with success")
+}
+
+func HandleError(err error) {
 	if err != nil {
 		panic(err)
-	} else {
-		fmt.Println(settingsFilePath + " updated with success")
 	}
 }
