@@ -37,7 +37,7 @@ const AppSettings = {
 }
 ```
 
-## Usage :
+## Start developing :
 
 **1) Install the dependencies :**
 
