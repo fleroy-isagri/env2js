@@ -1,3 +1,11 @@
+# env2js
+
+[![GitHub Release](https://img.shields.io/github/v/release/fleroy-isagri/env2js)](https://github.com/fleroy-isagri/env2js/releases)
+[![Go Reference](https://pkg.go.dev/badge/github.com/fleroy-isagri/env2js.svg)](https://pkg.go.dev/github.com/fleroy-isagri/env2js)
+[![go.mod](https://img.shields.io/github/go-mod/go-version/fleroy-isagri/env2js)](go.mod)
+[![LICENSE](https://img.shields.io/github/license/fleroy-isagri/env2js)](LICENSE)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/fleroy-isagri/env2js/build.yml?branch=main)](https://github.com/fleroy-isagri/env2js/actions?query=workflow%3Abuild+branch%3Amain)
+
 Env2js est une utilitaire permettant d'écrire dans un fichier de configuration en Javascript, la valeurs de variables d'environment.
 
 ### Exemple :
