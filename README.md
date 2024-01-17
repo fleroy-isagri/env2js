@@ -6,6 +6,7 @@
 [![go.mod](https://img.shields.io/github/go-mod/go-version/fleroy-isagri/env2js)](go.mod)
 [![LICENSE](https://img.shields.io/github/license/fleroy-isagri/env2js)](LICENSE)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/fleroy-isagri/env2js/build.yml?branch=main)](https://github.com/fleroy-isagri/env2js/actions?query=workflow%3Abuild+branch%3Amain)
+[![Codecov](https://codecov.io/gh/fleroy-isagri/env2js/branch/main/graph/badge.svg)](https://codecov.io/gh/fleroy-isagri/env2js)
 
 env2js is a tool that will transfer environment variable to a Javascript configuration file.
 
