@@ -1,0 +1,2 @@
+make mod
+make inst
