@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"io/fs"
 	"os"
@@ -22,6 +23,10 @@ var (
 	settingsFolderPath   string = ""
 	settingsFilePrefix   string = ""
 	settingsVariableName string = ""
+	commit               string
+	version              string
+	date                 string
+	builtBy              string
 )
 
 type walker struct {
@@ -145,7 +150,27 @@ func SetConfigFileLocationValue() {
 	fmt.Println("SettingVariableName:", settingsVariableName)
 }
 
+func handleFlags() {
+	// -version / --version
+	displayVersion := flag.Bool("version", false, "Display version and exit")
+
+	flag.Parse()
+
+	if *displayVersion {
+		// version and commit are set by the build script
+		// by GoReleaser with this default commandline on build command
+		// '-s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.builtBy=goreleaser'
+		fmt.Printf("version : %s\n", version)
+		fmt.Printf("commit  : %s\n", commit)
+		fmt.Printf("date    : %s\n", date)
+		fmt.Printf("builtBy : %s\n", builtBy)
+		os.Exit(0)
+	}
+}
+
 func main() {
+	handleFlags()
+
 	SetConfigFileLocationValue()
 
 	// TODO : aller chercher le nom du fichier de config dans le index.html
