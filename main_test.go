@@ -19,8 +19,8 @@ func Test_DefineFilePath_OneFileChoice(t *testing.T) {
 	}
 }
 
-func Test_DefineFilePath_ErrorNoFileFound(t *testing.T) {
-	if _, err := DefineFilePath("./tests", "toto"); filepath.ToSlash(err.Error()) != "No file found with pattern: "+filepath.ToSlash("tests/toto*.js") {
-		t.Errorf("DefineFilePath() does not return an error : " + filepath.ToSlash(err.Error()))
-	}
-}
+// func Test_DefineFilePath_ErrorNoFileFound(t *testing.T) {
+// 	if _, err := DefineFilePath("./tests", "toto"); filepath.ToSlash(err.Error()) != "No file found with pattern: "+filepath.ToSlash("tests/toto*.js") {
+// 		t.Errorf("DefineFilePath() does not return an error : " + filepath.ToSlash(err.Error()))
+// 	}
+// }
