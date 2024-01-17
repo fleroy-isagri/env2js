@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"io/fs"
 	"os"
@@ -22,6 +23,13 @@ var (
 	settingsFolderPath   string = ""
 	settingsFilePrefix   string = ""
 	settingsVariableName string = ""
+
+	// variables are set by GoReleaser with this default commandline on build command :
+	// '-s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.builtBy=goreleaser'
+	commit  string
+	version string
+	date    string
+	builtBy string
 )
 
 type walker struct {
@@ -145,7 +153,61 @@ func SetConfigFileLocationValue() {
 	fmt.Println("SettingVariableName:", settingsVariableName)
 }
 
+// https://eli.thegreenplace.net/2020/testing-flag-parsing-in-go-programs/
+type CommandLineConfig struct {
+	version bool
+
+	// args are the positional (non-flag) command-line arguments.
+	args []string
+}
+
+// parseFlags parses the command-line arguments provided to the program.
+// Typically os.Args[0] is provided as 'progname' and os.args[1:] as 'args'.
+// Returns the Config in case parsing succeeded, or an error. In any case, the
+// output of the flag.Parse is returned in output.
+// A special case is usage requests with -h or -help: then the error
+// flag.ErrHelp is returned and output will contain the usage message.
+func ParseFlags(progname string, args []string) (config *CommandLineConfig, output string, err error) {
+	flags := flag.NewFlagSet(progname, flag.ContinueOnError)
+	var buf bytes.Buffer
+	flags.SetOutput(&buf)
+
+	var conf CommandLineConfig
+	// -version / --version
+	flags.BoolVar(&conf.version, "version", false, "Display version and exit")
+
+	err = flags.Parse(args)
+	if err != nil {
+		return nil, buf.String(), err
+	}
+	conf.args = flags.Args()
+
+	if conf.version {
+		buf.WriteString(fmt.Sprintf("version : %s\n", version))
+		buf.WriteString(fmt.Sprintf("commit  : %s\n", commit))
+		buf.WriteString(fmt.Sprintf("date    : %s\n", date))
+		buf.WriteString(fmt.Sprintf("builtBy : %s\n", builtBy))
+	}
+
+	return &conf, buf.String(), nil
+}
+
 func main() {
+	config, output, err := ParseFlags(os.Args[0], os.Args[1:])
+	if err == flag.ErrHelp {
+		fmt.Println(output)
+		os.Exit(2)
+	} else if err != nil {
+		fmt.Println("got error:", err)
+		fmt.Println("output:\n", output)
+		os.Exit(1)
+	}
+
+	if config.version {
+		fmt.Println(output)
+		os.Exit(0)
+	}
+
 	SetConfigFileLocationValue()
 
 	// TODO : aller chercher le nom du fichier de config dans le index.html
