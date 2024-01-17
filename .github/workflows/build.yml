@@ -30,11 +30,11 @@ jobs:
 
       - name: Build
         run: make ci
-      # - name: Upload coverage
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: coverage-${{ matrix.os }}
-      #     path: coverage.*
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.os }}
+          path: coverage.*
 
       - run: goreleaser release --clean --snapshot
         if: ${{ runner.os == 'Linux' }}
@@ -45,8 +45,10 @@ jobs:
           name: dist-${{ matrix.os }}
           path: dist
 
-      # - name: Upload coverage to Codecov
-      #   uses: codecov/codecov-action@v3
-      #   with:
-      #     file: ./coverage.out
-      #     flags: ${{ runner.os }}
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          file: ./coverage.out
+          flags: ${{ runner.os }}
