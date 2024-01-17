@@ -1,0 +1,3 @@
+const AppSettings = {isServed: true, API: {apiRoot: 'url/server/app', apiVersion: {versionMin: 0, versionMax: 2}}, MyKey: 'TATA', MyArray: ['MyValue1', 'MyValue2']}; 
+const AppSettings2 = {isServed: false, API: {apiRoot: 'toto', apiVersion: {versionMin: 0, versionMax: 2}}, MyKey: 'MyValue', MyArray: ['MyValue1', 'MyValue2']}; 
+const Test = {isServed: false, API: {apiRoot: 'toto', apiVersion: {versionMin: 0, versionMax: 2}}, MyKey: 'TEST', MyArray: ['MyValue1', 'MyValue2']}; 
