@@ -2,12 +2,16 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
+
+	// Local packages
+	"github.com/fleroy-isagri/env2js/utils"
 
 	"github.com/tdewolff/parse/v2"
 	"github.com/tdewolff/parse/v2/js"
@@ -20,10 +24,6 @@ const (
 )
 
 var (
-	settingsFolderPath   string = ""
-	settingsFilePrefix   string = ""
-	settingsVariableName string = ""
-
 	// variables are set by GoReleaser with this default commandline on build command :
 	// '-s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.builtBy=goreleaser'
 	commit  string
@@ -38,7 +38,6 @@ type walker struct {
 }
 
 func (w *walker) Enter(n js.INode) js.IVisitor {
-	// fmt.Println("Enter:", n)
 	switch n := n.(type) {
 	case *js.BindingElement:
 		if n.Binding.String() != w.settingVariableName {
@@ -127,30 +126,21 @@ func DefineFilePath(settingsFolderPath string, settingsFilePrefix string) (strin
 	return settingsFilePath, nil
 }
 
-func SetConfigFileLocationValue() {
-	settingsFolderPath = os.Getenv(SettingsFolderPathEnvKey)
-	// settingsFolderPath := "./config"
-	if settingsFolderPath == "" {
-		panic(SettingsFolderPathEnvKey + " environment variable is not set")
-	}
+func GetConfigFileLocationValue() (string, string, string) {
+	settingsFolderPath, err := GetEnvOrError(SettingsFolderPathEnvKey)
+	utils.HandleError(err)
 
-	settingsFilePrefix = os.Getenv(SettingsFilePrefixEnvKey)
-	// settingsFilePrefix := "example"
-	// TODO : define a default value if not define
-	if settingsFilePrefix == "" {
-		panic(SettingsFilePrefixEnvKey + " environment variable is not set")
-	}
+	settingsFilePrefix, err := GetEnvOrError(SettingsFilePrefixEnvKey)
+	utils.HandleError(err)
 
-	settingsVariableName = os.Getenv(SettingsVariableNameEnvKey)
-	// settingsVariableName := "AppSettings"
-	// TODO : define a default value if not define
-	if settingsVariableName == "" {
-		panic(SettingsVariableNameEnvKey + " environment variable is not set")
-	}
+	settingsVariableName, err := GetEnvOrError(SettingsVariableNameEnvKey)
+	utils.HandleError(err)
 
-	fmt.Println("SettingsFolderPath:", settingsFolderPath)
-	fmt.Println("settingsFilePrefix:", settingsFilePrefix)
-	fmt.Println("SettingVariableName:", settingsVariableName)
+	utils.LogSuccess("✓ "+SettingsFolderPathEnvKey+": ", settingsFolderPath)
+	utils.LogSuccess("✓ "+SettingsFilePrefixEnvKey+": ", settingsFilePrefix)
+	utils.LogSuccess("✓ "+SettingsVariableNameEnvKey+": ", settingsVariableName)
+
+	return settingsFolderPath, settingsFilePrefix, settingsVariableName
 }
 
 // https://eli.thegreenplace.net/2020/testing-flag-parsing-in-go-programs/
@@ -208,7 +198,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	SetConfigFileLocationValue()
+	settingsFolderPath, settingsFilePrefix, settingsVariableName := GetConfigFileLocationValue()
 
 	// TODO : aller chercher le nom du fichier de config dans le index.html
 	settingsFilePath, errorDefineFilePath := DefineFilePath(settingsFolderPath, settingsFilePrefix)
@@ -218,12 +208,12 @@ func main() {
 
 	// Read the JavaScript file
 	jsBytes, err := os.ReadFile(settingsFilePath)
-	HandleError(err)
+	utils.HandleError(err)
 
 	// Parse the JavaScript file
 	input := parse.NewInput(bytes.NewReader(jsBytes))
 	ast, err := js.Parse(input, js.Options{})
-	HandleError(err)
+	utils.HandleError(err)
 
 	// Analyse du code javascript et réalisation des modifications si nécessaire
 	js.Walk(&walker{settingVariableName: settingsVariableName}, ast)
@@ -234,13 +224,15 @@ func main() {
 	var buffer bytes.Buffer
 	ast.JS(&buffer)
 	err = os.WriteFile(settingsFilePath, buffer.Bytes(), fs.ModePerm)
-	HandleError(err)
+	utils.HandleError(err)
 
-	fmt.Println(settingsFilePath + " updated with success")
+	utils.LogSuccess("🎉 Successfuly updated : ", settingsFilePath+" 🎉")
 }
 
-func HandleError(err error) {
-	if err != nil {
-		panic(err)
+func GetEnvOrError(value string) (string, error) {
+	env := os.Getenv(value)
+	if env == "" {
+		return "", errors.New("No environment key for : " + value)
 	}
+	return env, nil
 }
