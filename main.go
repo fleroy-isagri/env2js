@@ -17,6 +17,19 @@ import (
 	"github.com/tdewolff/parse/v2/js"
 )
 
+// Wrap the library method for the sake of unit-tests that needs to mock the returns.
+// GetEnv
+// // Testing it without mock would imply to cover the environment variable erasing.
+// // Which means that windows & linux would have two different behaviour.
+var (
+	Getenv      = os.Getenv
+	Exit        = os.Exit
+	ReadFile    = os.ReadFile
+	WriteFile   = os.WriteFile
+	HandleError = utils.HandleError
+	LogSuccess  = utils.LogSuccess
+)
+
 const (
 	SettingsFolderPathEnvKey   string = "SETTINGS_FOLDER_PATH"
 	SettingsFilePrefixEnvKey   string = "SETTINGS_FILE_PREFIX"
@@ -26,41 +39,41 @@ const (
 var (
 	// variables are set by GoReleaser with this default commandline on build command :
 	// '-s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.builtBy=goreleaser'
-	commit  string
-	version string
-	date    string
-	builtBy string
+	Commit  string
+	Version string
+	Date    string
+	BuiltBy string
 )
 
-type walker struct {
-	currentPath         []string
-	settingVariableName string
+type Walker struct {
+	CurrentPath         []string
+	SettingVariableName string
 }
 
-func (w *walker) Enter(n js.INode) js.IVisitor {
+func (w *Walker) Enter(n js.INode) js.IVisitor {
 	switch n := n.(type) {
 	case *js.BindingElement:
-		if n.Binding.String() != w.settingVariableName {
+		if n.Binding.String() != w.SettingVariableName {
 			return nil
 		}
 	case *js.Property:
-		w.currentPath = append(w.currentPath, n.Name.String())
+		w.CurrentPath = append(w.CurrentPath, n.Name.String())
 		if valueExpression, ok := n.Value.(*js.LiteralExpr); ok {
-			if newStringValue, ok := GetEnvValue(w.currentPath); ok {
+			if newStringValue, ok := GetEnvValue(w.CurrentPath); ok {
 				UpdateData(valueExpression, newStringValue)
 			}
-			w.currentPath = w.currentPath[:len(w.currentPath)-1]
+			w.CurrentPath = w.CurrentPath[:len(w.CurrentPath)-1]
 			return nil
 		}
 	case *js.ArrayExpr:
 		for i, item := range n.List {
 			if item.Value != nil {
 				if valueExpression, ok := item.Value.(*js.LiteralExpr); ok {
-					w.currentPath = append(w.currentPath, "["+fmt.Sprint(i)+"]")
-					if newStringValue, ok := GetEnvValue(w.currentPath); ok {
+					w.CurrentPath = append(w.CurrentPath, "["+fmt.Sprint(i)+"]")
+					if newStringValue, ok := GetEnvValue(w.CurrentPath); ok {
 						UpdateData(valueExpression, newStringValue)
 					}
-					w.currentPath = w.currentPath[:len(w.currentPath)-1]
+					w.CurrentPath = w.CurrentPath[:len(w.CurrentPath)-1]
 				}
 			}
 		}
@@ -68,11 +81,10 @@ func (w *walker) Enter(n js.INode) js.IVisitor {
 	return w
 }
 
-func (w *walker) Exit(n js.INode) {
-	// fmt.Println("Exit:", n)
+func (w *Walker) Exit(n js.INode) {
 	switch n.(type) {
 	case *js.Property:
-		w.currentPath = w.currentPath[:len(w.currentPath)-1]
+		w.CurrentPath = w.CurrentPath[:len(w.CurrentPath)-1]
 	case *js.PropertyName:
 	}
 }
@@ -82,18 +94,23 @@ func GetEnvValue(path []string) (string, bool) {
 	computedKey := "AppSettings_"
 	computedKey += strings.Join(path, "_")
 
-	if envValue := os.Getenv(computedKey); envValue != "" {
+	if envValue := Getenv(computedKey); envValue != "" {
 		return envValue, true
 	}
 
 	return "", false
 }
 
-func UpdateData(valueExpression *js.LiteralExpr, newValue string) {
-	if newValue == "" {
-		return
+func GetEnvOrPanic(value string) string {
+	env := Getenv(value)
+	if env == "" {
+		HandleError(errors.New("No environment key for : " + value))
 	}
 
+	return env
+}
+
+func UpdateData(valueExpression *js.LiteralExpr, newValue string) {
 	if valueExpression.TokenType.String() == "String" {
 		valueExpression.Data = []byte("'" + newValue + "'")
 		return
@@ -127,28 +144,25 @@ func DefineFilePath(settingsFolderPath string, settingsFilePrefix string) (strin
 }
 
 func GetConfigFileLocationValue() (string, string, string) {
-	settingsFolderPath, err := GetEnvOrError(SettingsFolderPathEnvKey)
-	utils.HandleError(err)
+	settingsFolderPath := GetEnvOrPanic(SettingsFolderPathEnvKey)
 
-	settingsFilePrefix, err := GetEnvOrError(SettingsFilePrefixEnvKey)
-	utils.HandleError(err)
+	settingsFilePrefix := GetEnvOrPanic(SettingsFilePrefixEnvKey)
 
-	settingsVariableName, err := GetEnvOrError(SettingsVariableNameEnvKey)
-	utils.HandleError(err)
+	settingsVariableName := GetEnvOrPanic(SettingsVariableNameEnvKey)
 
-	utils.LogSuccess("✓ "+SettingsFolderPathEnvKey+": ", settingsFolderPath)
-	utils.LogSuccess("✓ "+SettingsFilePrefixEnvKey+": ", settingsFilePrefix)
-	utils.LogSuccess("✓ "+SettingsVariableNameEnvKey+": ", settingsVariableName)
+	LogSuccess("✓ "+SettingsFolderPathEnvKey+": ", settingsFolderPath)
+	LogSuccess("✓ "+SettingsFilePrefixEnvKey+": ", settingsFilePrefix)
+	LogSuccess("✓ "+SettingsVariableNameEnvKey+": ", settingsVariableName)
 
 	return settingsFolderPath, settingsFilePrefix, settingsVariableName
 }
 
 // https://eli.thegreenplace.net/2020/testing-flag-parsing-in-go-programs/
 type CommandLineConfig struct {
-	version bool
+	Version bool
 
 	// args are the positional (non-flag) command-line arguments.
-	args []string
+	Args []string
 }
 
 // parseFlags parses the command-line arguments provided to the program.
@@ -164,75 +178,79 @@ func ParseFlags(progname string, args []string) (config *CommandLineConfig, outp
 
 	var conf CommandLineConfig
 	// -version / --version
-	flags.BoolVar(&conf.version, "version", false, "Display version and exit")
+	flags.BoolVar(&conf.Version, "version", false, "Display version and exit")
 
 	err = flags.Parse(args)
-	if err != nil {
+	// When triggered by the "go test" or "ginkgo" command the args starts with "-test.-timeout=..." or "-ginkgo..."
+	isTestCommand := strings.Contains(strings.Join(flags.Args(), ""), "-test") || strings.Contains(strings.Join(flags.Args(), ""), "-ginkgo")
+
+	// Prompt error that exit if there is a parse error and that we are out of test context
+	if err != nil && !isTestCommand {
 		return nil, buf.String(), err
 	}
-	conf.args = flags.Args()
+	conf.Args = flags.Args()
 
-	if conf.version {
-		buf.WriteString(fmt.Sprintf("version : %s\n", version))
-		buf.WriteString(fmt.Sprintf("commit  : %s\n", commit))
-		buf.WriteString(fmt.Sprintf("date    : %s\n", date))
-		buf.WriteString(fmt.Sprintf("builtBy : %s\n", builtBy))
+	if conf.Version {
+		buf.WriteString(fmt.Sprintf("version : %s\n", Version))
+		buf.WriteString(fmt.Sprintf("commit  : %s\n", Commit))
+		buf.WriteString(fmt.Sprintf("date    : %s\n", Date))
+		buf.WriteString(fmt.Sprintf("builtBy : %s\n", BuiltBy))
 	}
 
 	return &conf, buf.String(), nil
 }
 
-func main() {
-	config, output, err := ParseFlags(os.Args[0], os.Args[1:])
+func LogFlags(config *CommandLineConfig, output string, err error) {
 	if err == flag.ErrHelp {
-		fmt.Println(output)
-		os.Exit(2)
+		HandleError(errors.New(output))
+		Exit(2)
 	} else if err != nil {
-		fmt.Println("got error:", err)
-		fmt.Println("output:\n", output)
-		os.Exit(1)
+		HandleError(errors.New(output))
+		Exit(1)
 	}
 
-	if config.version {
-		fmt.Println(output)
-		os.Exit(0)
+	if config.Version {
+		Exit(0)
 	}
+}
 
-	settingsFolderPath, settingsFilePrefix, settingsVariableName := GetConfigFileLocationValue()
-
-	// TODO : aller chercher le nom du fichier de config dans le index.html
-	settingsFilePath, errorDefineFilePath := DefineFilePath(settingsFolderPath, settingsFilePrefix)
-	if errorDefineFilePath != nil {
-		panic(errorDefineFilePath)
-	}
-
+func WriteInConfigFile(settingsFilePath string, settingsVariableName string) {
 	// Read the JavaScript file
-	jsBytes, err := os.ReadFile(settingsFilePath)
-	utils.HandleError(err)
+	jsBytes, err := ReadFile(settingsFilePath)
+	HandleError(err)
 
 	// Parse the JavaScript file
 	input := parse.NewInput(bytes.NewReader(jsBytes))
 	ast, err := js.Parse(input, js.Options{})
-	utils.HandleError(err)
+	HandleError(err)
 
 	// Analyse du code javascript et réalisation des modifications si nécessaire
-	js.Walk(&walker{settingVariableName: settingsVariableName}, ast)
+	js.Walk(&Walker{SettingVariableName: settingsVariableName}, ast)
 
 	// Write the updated JavaScript file
 	// TODO : mettre à jour le fichier uniquement si des modifications ont été faite
 	// TODO : afficher les modifications apportées
 	var buffer bytes.Buffer
 	ast.JS(&buffer)
-	err = os.WriteFile(settingsFilePath, buffer.Bytes(), fs.ModePerm)
-	utils.HandleError(err)
+	err = WriteFile(settingsFilePath, buffer.Bytes(), fs.ModePerm)
+	HandleError(err)
 
-	utils.LogSuccess("🎉 Successfuly updated : ", settingsFilePath+" 🎉")
+	LogSuccess("🎉 Successfuly updated : ", settingsFilePath+" 🎉")
 }
 
-func GetEnvOrError(value string) (string, error) {
-	env := os.Getenv(value)
-	if env == "" {
-		return "", errors.New("No environment key for : " + value)
-	}
-	return env, nil
+func Init() {
+	config, output, err := ParseFlags(os.Args[0], os.Args[1:])
+	LogFlags(config, output, err)
+
+	settingsFolderPath, settingsFilePrefix, settingsVariableName := GetConfigFileLocationValue()
+	settingsFilePath, errorDefineFilePath := DefineFilePath(settingsFolderPath, settingsFilePrefix)
+	HandleError(errorDefineFilePath)
+
+	WriteInConfigFile(settingsFilePath, settingsVariableName)
+}
+
+// Because of the lowercase letter not being accessible in the main_test package,
+// we give to main responsability as little as possible to cover most of the code
+func main() {
+	Init()
 }
