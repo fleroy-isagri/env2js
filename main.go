@@ -101,19 +101,16 @@ func GetEnvValue(path []string) (string, bool) {
 	return "", false
 }
 
-func GetEnvOrError(value string) (string, error) {
+func GetEnvOrPanic(value string) string {
 	env := Getenv(value)
 	if env == "" {
-		return "", errors.New("No environment key for : " + value)
+		HandleError(errors.New("No environment key for : " + value))
 	}
-	return env, nil
+
+	return env
 }
 
 func UpdateData(valueExpression *js.LiteralExpr, newValue string) {
-	if newValue == "" {
-		return
-	}
-
 	if valueExpression.TokenType.String() == "String" {
 		valueExpression.Data = []byte("'" + newValue + "'")
 		return
@@ -147,14 +144,11 @@ func DefineFilePath(settingsFolderPath string, settingsFilePrefix string) (strin
 }
 
 func GetConfigFileLocationValue() (string, string, string) {
-	settingsFolderPath, err := GetEnvOrError(SettingsFolderPathEnvKey)
-	HandleError(err)
+	settingsFolderPath := GetEnvOrPanic(SettingsFolderPathEnvKey)
 
-	settingsFilePrefix, err := GetEnvOrError(SettingsFilePrefixEnvKey)
-	HandleError(err)
+	settingsFilePrefix := GetEnvOrPanic(SettingsFilePrefixEnvKey)
 
-	settingsVariableName, err := GetEnvOrError(SettingsVariableNameEnvKey)
-	HandleError(err)
+	settingsVariableName := GetEnvOrPanic(SettingsVariableNameEnvKey)
 
 	LogSuccess("✓ "+SettingsFolderPathEnvKey+": ", settingsFolderPath)
 	LogSuccess("✓ "+SettingsFilePrefixEnvKey+": ", settingsFilePrefix)
@@ -187,6 +181,7 @@ func ParseFlags(progname string, args []string) (config *CommandLineConfig, outp
 	flags.BoolVar(&conf.Version, "version", false, "Display version and exit")
 
 	err = flags.Parse(args)
+	// When triggered by the "go test" or "ginkgo" command the args starts with "-test.-timeout=..." or "-ginkgo..."
 	isTestCommand := strings.Contains(strings.Join(flags.Args(), ""), "-test") || strings.Contains(strings.Join(flags.Args(), ""), "-ginkgo")
 
 	// Prompt error that exit if there is a parse error and that we are out of test context
@@ -243,17 +238,19 @@ func WriteInConfigFile(settingsFilePath string, settingsVariableName string) {
 	LogSuccess("🎉 Successfuly updated : ", settingsFilePath+" 🎉")
 }
 
-func main() {
+func Init() {
 	config, output, err := ParseFlags(os.Args[0], os.Args[1:])
 	LogFlags(config, output, err)
 
 	settingsFolderPath, settingsFilePrefix, settingsVariableName := GetConfigFileLocationValue()
-
-	// TODO : aller chercher le nom du fichier de config dans le index.html
 	settingsFilePath, errorDefineFilePath := DefineFilePath(settingsFolderPath, settingsFilePrefix)
-	if errorDefineFilePath != nil {
-		panic(errorDefineFilePath)
-	}
+	HandleError(errorDefineFilePath)
 
 	WriteInConfigFile(settingsFilePath, settingsVariableName)
+}
+
+// Because of the lowercase letter not being accessible in the main_test package,
+// we give to main responsability as little as possible to cover most of the code
+func main() {
+	Init()
 }

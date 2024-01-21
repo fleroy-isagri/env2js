@@ -39,74 +39,72 @@ var _ = Describe("Main", func() {
 			mockOs = new(MockOs)
 		})
 
-		Context("With a string value", func() {
-			It("should erase the file key value with the new value", func() {
-				// Arrange
-				mockOs.On("Getenv", "AppSettings_MyKey").Return("Test1")
-				Getenv = mockOs.Getenv
-				// Act
-				InterpretJSStringAsAst("const AppSettings = {MyKey: 'MyValue1'};")
-				// Assert
-				Expect(HasNotToPanic()).To(Equal(true))
-			})
+		It("should erase the file key value with the new value with a string value", func() {
+			// Arrange
+			mockOs.On("Getenv", "AppSettings_MyKey").Return("Test1")
+			Getenv = mockOs.Getenv
+			// Act
+			InterpretJSStringAsAst("const AppSettings = {MyKey: 'MyValue1'};")
+			// Assert
+			Expect(HasNotToPanic()).To(Equal(true))
 		})
 
-		Context("With a boolean value", func() {
-			It("should erase the file key value with the new value", func() {
-				// Arrange
-				mockOs.On("Getenv", "AppSettings_MyKey").Return("true")
-				Getenv = mockOs.Getenv
-				// Act
-				InterpretJSStringAsAst("const AppSettings = {MyKey: false};")
-				// Assert
-				Expect(HasNotToPanic()).To(Equal(true))
-			})
+		It("should erase the file key value with the new value with a boolean value", func() {
+			// Arrange
+			mockOs.On("Getenv", "AppSettings_MyKey").Return("true")
+			Getenv = mockOs.Getenv
+			// Act
+			InterpretJSStringAsAst("const AppSettings = {MyKey: false};")
+			// Assert
+			Expect(HasNotToPanic()).To(Equal(true))
 		})
 
-		Context("With an integer value", func() {
-			It("should erase the file key value with the new value", func() {
-				// Arrange
-				mockOs.On("Getenv", "AppSettings_MyKey").Return("1")
-				Getenv = mockOs.Getenv
-				// Act
-				InterpretJSStringAsAst("const AppSettings = {MyKey: 0};")
-				// Assert
-				Expect(HasNotToPanic()).To(Equal(true))
-			})
+		It("should erase the file key value with the new value with an integer value", func() {
+			// Arrange
+			mockOs.On("Getenv", "AppSettings_MyKey").Return("1")
+			Getenv = mockOs.Getenv
+			// Act
+			InterpretJSStringAsAst("const AppSettings = {MyKey: 0};")
+			// Assert
+			Expect(HasNotToPanic()).To(Equal(true))
 		})
 
-		Context("With an empty value", func() {
-			It("should erase the file key value with the new value", func() {
-				// Arrange
-				mockOs.On("Getenv", "AppSettings_MyKey").Return("")
-				Getenv = mockOs.Getenv
-				// Act
-				InterpretJSStringAsAst("const AppSettings = {MyKey: 'MyValue1'};")
-				// Assert
-				Expect(HasNotToPanic()).To(Equal(true))
-			})
+		It("should erase the file key value with the new value with a decimal value", func() {
+			// Arrange
+			mockOs.On("Getenv", "AppSettings_MyKey").Return("1")
+			Getenv = mockOs.Getenv
+			// Act
+			InterpretJSStringAsAst("const AppSettings = {MyKey: 0.5};")
+			// Assert
+			Expect(HasNotToPanic()).To(Equal(true))
 		})
 
-		Context("With an array value", func() {
-			It("should show the current version", func() {
-				// Arrange
-				mockOs.On("Getenv", "AppSettings_MyArray_[0]").Return("Test1")
-				mockOs.On("Getenv", "AppSettings_MyArray_[1]").Return("Test2")
-				Getenv = mockOs.Getenv
-				// Act
-				InterpretJSStringAsAst("const AppSettings = {MyArray: ['MyValue1', 'MyValue2']};")
-				// Assert
-				Expect(HasNotToPanic()).To(Equal(true))
-			})
+		It("should erase the file key value with the new value with an empty value", func() {
+			// Arrange
+			mockOs.On("Getenv", "AppSettings_MyKey").Return("")
+			Getenv = mockOs.Getenv
+			// Act
+			InterpretJSStringAsAst("const AppSettings = {MyKey: 'MyValue1'};")
+			// Assert
+			Expect(HasNotToPanic()).To(Equal(true))
 		})
 
-		Context("With an invalid binding element value", func() {
-			It("should not do anything", func() {
-				// Act
-				InterpretJSStringAsAst("const WrongBindingElement = {};")
-				// Assert
-				Expect(HasNotToPanic()).To(Equal(true))
-			})
+		It("should show the current version with an array value", func() {
+			// Arrange
+			mockOs.On("Getenv", "AppSettings_MyArray_[0]").Return("Test1")
+			mockOs.On("Getenv", "AppSettings_MyArray_[1]").Return("Test2")
+			Getenv = mockOs.Getenv
+			// Act
+			InterpretJSStringAsAst("const AppSettings = {MyArray: ['MyValue1', 'MyValue2']};")
+			// Assert
+			Expect(HasNotToPanic()).To(Equal(true))
+		})
+
+		It("should not do anything with an invalid binding element value", func() {
+			// Act
+			InterpretJSStringAsAst("const WrongBindingElement = {};")
+			// Assert
+			Expect(HasNotToPanic()).To(Equal(true))
 		})
 	})
 
@@ -137,46 +135,44 @@ var _ = Describe("Main", func() {
 				}
 				Expect(filepath.ToSlash(err.Error())).To(Equal("No file found with pattern: " + filepath.ToSlash("tests/toto*.js")))
 			})
+
+			It("should return an error if a bad pattern was passed", func() {
+				_, err := DefineFilePath("[invalid[", "toto")
+				if err == nil {
+					AbortSuite("Folder should not be find")
+				}
+				Expect(err.Error()).To(Equal(filepath.ErrBadPattern.Error()))
+			})
 		})
 	})
 
 	Describe("GetConfigFileLocationValue", func() {
-		Context("When one of the environment variable is missing", func() {
-			var doesPanic bool
-			var mockOs MockOs
-			BeforeEach(func() {
-				doesPanic = true
-				// Create an instance of the mock.
-				mockOs := new(MockOs)
-				// Set expectations for the Getenv method.
-				mockOs.On("Getenv", SettingsFolderPathEnvKey).Return(SettingsFolderPathEnvKey)
-				mockOs.On("Getenv", SettingsFilePrefixEnvKey).Return(SettingsFilePrefixEnvKey)
-				mockOs.On("Getenv", SettingsVariableNameEnvKey).Return(SettingsVariableNameEnvKey)
-			})
+		var mockOs *MockOs
+		BeforeEach(func() {
+			mockOs = new(MockOs)
+			mockOs.On("Getenv", SettingsFolderPathEnvKey).Return(SettingsFolderPathEnvKey)
+			mockOs.On("Getenv", SettingsFilePrefixEnvKey).Return(SettingsFilePrefixEnvKey)
+			mockOs.On("Getenv", SettingsVariableNameEnvKey).Return(SettingsVariableNameEnvKey)
+		})
 
+		Context("When one of the environment variable is missing", func() {
 			It("should panic regarding settingsFolderPath", func() {
-				mockOs.On("Getenv", SettingsFolderPathEnvKey).Return("")
-				// Replace the original os.Getenv with the mock implementation.
+				mockOs.On("Getenv", SettingsFolderPathEnvKey).Unset()
+				mockOs.On("Getenv", SettingsFolderPathEnvKey).Return("").Once()
 				Getenv = mockOs.Getenv
-				defer ExpectToPanic(doesPanic, "settingsFolderPath panic")
-				GetConfigFileLocationValue()
-				doesPanic = false
+				Expect(func() { GetConfigFileLocationValue() }).To(Panic())
 			})
 			It("should panic regarding settingsFilePrefix", func() {
-				mockOs.On("Getenv", SettingsFilePrefixEnvKey).Return("")
-				// Replace the original os.Getenv with the mock implementation.
+				mockOs.On("Getenv", SettingsFilePrefixEnvKey).Unset()
+				mockOs.On("Getenv", SettingsFilePrefixEnvKey).Return("").Once()
 				Getenv = mockOs.Getenv
-				defer ExpectToPanic(doesPanic, "settingsFilePrefix panic")
-				GetConfigFileLocationValue()
-				doesPanic = false
+				Expect(func() { GetConfigFileLocationValue() }).To(Panic())
 			})
 			It("should panic regarding settingsVariableName", func() {
-				mockOs.On("Getenv", SettingsVariableNameEnvKey).Return("")
-				// Replace the original os.Getenv with the mock implementation.
+				mockOs.On("Getenv", SettingsVariableNameEnvKey).Unset()
+				mockOs.On("Getenv", SettingsVariableNameEnvKey).Return("").Once()
 				Getenv = mockOs.Getenv
-				defer ExpectToPanic(doesPanic, "settingsVariableName panic")
-				GetConfigFileLocationValue()
-				doesPanic = false
+				Expect(func() { GetConfigFileLocationValue() }).To(Panic())
 			})
 		})
 	})
@@ -235,7 +231,7 @@ var _ = Describe("Main", func() {
 	})
 
 	Describe("WriteInConfigFile", func() {
-		It("should exit when LogVersion function is called with an error", func() {
+		It("should not panic when calling WriteInConfigFile", func() {
 			// Arrange
 			mockOs := new(MockOs)
 			ReadFile = mockOs.ReadFile
@@ -243,6 +239,22 @@ var _ = Describe("Main", func() {
 
 			// Assert
 			Expect(func() { WriteInConfigFile("fileName", "variableName") }).NotTo(Panic())
+		})
+	})
+
+	Describe("Init", func() {
+		It("should not panic when calling Init", func() {
+			// Arrange
+			mockOs := new(MockOs)
+			ReadFile = mockOs.ReadFile
+			WriteFile = mockOs.WriteFile
+			mockOs.On("Getenv", SettingsFolderPathEnvKey).Return("./tests")
+			mockOs.On("Getenv", SettingsFilePrefixEnvKey).Return("example")
+			mockOs.On("Getenv", SettingsVariableNameEnvKey).Return("AppSettings")
+			Getenv = mockOs.Getenv
+
+			// Assert
+			Expect(func() { Init() }).NotTo(Panic())
 		})
 	})
 })
@@ -295,7 +307,7 @@ func (m *MockOs) Exit(code int) {
 }
 
 func (m *MockOs) ReadFile(name string) ([]byte, error) {
-	return []byte("Mocked data"), nil
+	return []byte("const MockedData = {}"), nil
 }
 
 func (m *MockOs) WriteFile(name string, data []byte, perm fs.FileMode) error {
@@ -308,7 +320,11 @@ type MockUtils struct {
 }
 
 // HandleError is a mocked implementation of utils.HandleError.
-func (m *MockUtils) HandleError(key error) {}
+func (m *MockUtils) HandleError(err error) {
+	if err != nil {
+		panic("")
+	}
+}
 
 // LogSuccess is a mocked implementation of utils.LogSuccess.
 func (m *MockUtils) LogSuccess(title string, log string) {}
