@@ -4,7 +4,7 @@ go 1.21.1
 
 require (
 	github.com/fatih/color v1.16.0
-	github.com/tdewolff/parse/v2 v2.7.9
+	github.com/tdewolff/parse/v2 v2.7.11
 )
 
 require (
