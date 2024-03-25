@@ -4,7 +4,7 @@ go 1.21.1
 
 require (
 	github.com/goreleaser/goreleaser v1.24.0
-	github.com/onsi/ginkgo/v2 v2.17.0
+	github.com/onsi/ginkgo/v2 v2.17.1
 )
 
 require (
