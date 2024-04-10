@@ -1,6 +1,6 @@
 module github.com/fleroy-isagri/env2js
 
-go 1.21.1
+go 1.22.2
 
 require (
 	github.com/fatih/color v1.16.0
