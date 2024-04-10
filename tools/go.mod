@@ -1,6 +1,6 @@
 module tools
 
-go 1.21.1
+go 1.22.2
 
 require (
 	github.com/goreleaser/goreleaser v1.25.1

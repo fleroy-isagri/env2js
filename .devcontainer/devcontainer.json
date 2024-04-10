@@ -1,9 +1,14 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
-// README at: https://github.com/devcontainers/templates/tree/main/src/go
+// README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
 {
-  "name": "go-env2js",
+  "name": "env2js-ubuntu-go",
   // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-  "image": "mcr.microsoft.com/devcontainers/go:1-1.21-bullseye",
+  "image": "mcr.microsoft.com/devcontainers/base:jammy",
+  "features": {
+    "ghcr.io/devcontainers/features/go:1": {
+      "version": "1.22.2"
+    }
+  },
 
   // Features to add to the dev container. More info: https://containers.dev/features.
   // "features": {},
@@ -11,7 +16,7 @@
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   // "forwardPorts": [],
 
-  //Use 'postCreateCommand' to run commands after the container is created.
+  // Use 'postCreateCommand' to run commands after the container is created.
   "postCreateCommand": "chmod +x ./.devcontainer/postCreateCommand.sh && ./.devcontainer/postCreateCommand.sh",
 
   // Configure tool-specific properties.
@@ -19,7 +24,8 @@
     "vscode": {
       "extensions": [
         "golang.go",
-        "redhat.vscode-yaml"
+        "redhat.vscode-yaml",
+        "github.vscode-github-actions"
       ]
     }
   }
