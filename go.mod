@@ -4,6 +4,9 @@ go 1.21.1
 
 require (
 	github.com/fatih/color v1.16.0
+	github.com/onsi/ginkgo/v2 v2.17.1
+	github.com/onsi/gomega v1.32.0
+	github.com/stretchr/testify v1.9.0
 	github.com/tdewolff/parse/v2 v2.7.12
 )
 
@@ -23,9 +26,6 @@ require (
 require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/onsi/ginkgo/v2 v2.17.1
-	github.com/onsi/gomega v1.32.0
-	github.com/stretchr/testify v1.9.0
 	golang.org/x/net v0.20.0 // indirect
-	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/sys v0.19.0 // indirect
 )
