@@ -57,10 +57,30 @@ func (w *Walker) Enter(n js.INode) js.IVisitor {
 			return nil
 		}
 	case *js.Property:
+		println("Property : ", n.Name.String())
+		println("Property value : ", n.Value.String())
 		w.CurrentPath = append(w.CurrentPath, n.Name.String())
 		if valueExpression, ok := n.Value.(*js.LiteralExpr); ok {
 			if newStringValue, ok := GetEnvValue(w.CurrentPath); ok {
 				UpdateData(valueExpression, newStringValue)
+			}
+			w.CurrentPath = w.CurrentPath[:len(w.CurrentPath)-1]
+			return nil
+		}
+		// Cas des propriété booléenne qui sont transformées en UnaryExpr par l'optimisation du build angular
+		// true => !0
+		// false => !1
+		if valueExpression, ok := n.Value.(*js.UnaryExpr); ok {
+			println("UnaryExpr : ", valueExpression.String())
+			if valueExpression.Op == js.NotToken && valueExpression.X.(*js.LiteralExpr).TokenType == js.IntegerToken {
+				if newStringValue, ok := GetEnvValue(w.CurrentPath); ok {
+					if newStringValue == "true" {
+						valueExpression.X = &js.LiteralExpr{Data: []byte("0"), TokenType: js.IntegerToken}
+					}
+					if newStringValue == "false" {
+						valueExpression.X = &js.LiteralExpr{Data: []byte("1"), TokenType: js.IntegerToken}
+					}
+				}
 			}
 			w.CurrentPath = w.CurrentPath[:len(w.CurrentPath)-1]
 			return nil
@@ -93,7 +113,7 @@ func GetEnvValue(path []string) (string, bool) {
 	// TODO : use settingsVariableName instead
 	computedKey := "AppSettings_"
 	computedKey += strings.Join(path, "_")
-
+	println("Computed key : ", computedKey)
 	if envValue := Getenv(computedKey); envValue != "" {
 		return envValue, true
 	}
@@ -111,6 +131,8 @@ func GetEnvOrPanic(value string) string {
 }
 
 func UpdateData(valueExpression *js.LiteralExpr, newValue string) {
+	println(valueExpression.TokenType.String())
+	println("Updating value : ", string(valueExpression.Data), " -> ", newValue)
 	if valueExpression.TokenType.String() == "String" {
 		valueExpression.Data = []byte("'" + newValue + "'")
 		return
