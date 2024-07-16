@@ -44,9 +44,10 @@ var _ = Describe("Main", func() {
 			mockOs.On("Getenv", "AppSettings_MyKey").Return("Test1")
 			Getenv = mockOs.Getenv
 			// Act
-			InterpretJSStringAsAst("const AppSettings = {MyKey: 'MyValue1'};")
+			result := InterpretJSStringAsAst("const AppSettings = {MyKey: 'MyValue1'};")
 			// Assert
 			Expect(HasNotToPanic()).To(Equal(true))
+			Expect(result).To(Equal("const AppSettings = {MyKey: 'Test1'};"))
 		})
 
 		It("should erase the file key value with the new value with a boolean value", func() {
@@ -54,9 +55,32 @@ var _ = Describe("Main", func() {
 			mockOs.On("Getenv", "AppSettings_MyKey").Return("true")
 			Getenv = mockOs.Getenv
 			// Act
-			InterpretJSStringAsAst("const AppSettings = {MyKey: false};")
+			result := InterpretJSStringAsAst("const AppSettings = {MyKey: false};")
 			// Assert
 			Expect(HasNotToPanic()).To(Equal(true))
+			Expect(result).To(Equal("const AppSettings = {MyKey: true};"))
+		})
+
+		It("should erase the file key value with the new value with a unaexpression boolean value for a newvalue as true", func() {
+			// Arrange
+			mockOs.On("Getenv", "AppSettings_MyKey").Return("true")
+			Getenv = mockOs.Getenv
+			// Act
+			result := InterpretJSStringAsAst("const AppSettings = {MyKey: !1};")
+			// Assert
+			Expect(HasNotToPanic()).To(Equal(true))
+			Expect(result).To(Equal("const AppSettings = {MyKey: !0};"))
+		})
+
+		It("should erase the file key value with the new value with a unaexpression boolean value for a newvalue as false", func() {
+			// Arrange
+			mockOs.On("Getenv", "AppSettings_MyKey").Return("false")
+			Getenv = mockOs.Getenv
+			// Act
+			result := InterpretJSStringAsAst("const AppSettings = {MyKey: !0};")
+			// Assert
+			Expect(HasNotToPanic()).To(Equal(true))
+			Expect(result).To(Equal("const AppSettings = {MyKey: !1};"))
 		})
 
 		It("should erase the file key value with the new value with an integer value", func() {
@@ -64,9 +88,10 @@ var _ = Describe("Main", func() {
 			mockOs.On("Getenv", "AppSettings_MyKey").Return("1")
 			Getenv = mockOs.Getenv
 			// Act
-			InterpretJSStringAsAst("const AppSettings = {MyKey: 0};")
+			result := InterpretJSStringAsAst("const AppSettings = {MyKey: 10};")
 			// Assert
 			Expect(HasNotToPanic()).To(Equal(true))
+			Expect(result).To(Equal("const AppSettings = {MyKey: 1};"))
 		})
 
 		It("should erase the file key value with the new value with a decimal value", func() {
@@ -74,19 +99,10 @@ var _ = Describe("Main", func() {
 			mockOs.On("Getenv", "AppSettings_MyKey").Return("1")
 			Getenv = mockOs.Getenv
 			// Act
-			InterpretJSStringAsAst("const AppSettings = {MyKey: 0.5};")
+			result := InterpretJSStringAsAst("const AppSettings = {MyKey: 0.5};")
 			// Assert
 			Expect(HasNotToPanic()).To(Equal(true))
-		})
-
-		It("should erase the file key value with the new value with an empty value", func() {
-			// Arrange
-			mockOs.On("Getenv", "AppSettings_MyKey").Return("")
-			Getenv = mockOs.Getenv
-			// Act
-			InterpretJSStringAsAst("const AppSettings = {MyKey: 'MyValue1'};")
-			// Assert
-			Expect(HasNotToPanic()).To(Equal(true))
+			Expect(result).To(Equal("const AppSettings = {MyKey: 1};"))
 		})
 
 		It("should show the current version with an array value", func() {
@@ -95,16 +111,18 @@ var _ = Describe("Main", func() {
 			mockOs.On("Getenv", "AppSettings_MyArray_[1]").Return("Test2")
 			Getenv = mockOs.Getenv
 			// Act
-			InterpretJSStringAsAst("const AppSettings = {MyArray: ['MyValue1', 'MyValue2']};")
+			result := InterpretJSStringAsAst("const AppSettings = {MyArray: ['MyValue1', 'MyValue2']};")
 			// Assert
 			Expect(HasNotToPanic()).To(Equal(true))
+			Expect(result).To(Equal("const AppSettings = {MyArray: ['Test1', 'Test2']};"))
 		})
 
 		It("should not do anything with an invalid binding element value", func() {
 			// Act
-			InterpretJSStringAsAst("const WrongBindingElement = {};")
+			result := InterpretJSStringAsAst("const WrongBindingElement = {};")
 			// Assert
 			Expect(HasNotToPanic()).To(Equal(true))
+			Expect(result).To(Equal("const WrongBindingElement = {};"))
 		})
 	})
 
@@ -261,12 +279,13 @@ var _ = Describe("Main", func() {
 
 ////////////// HELPERS //////////////
 
-func InterpretJSStringAsAst(jsString string) {
+func InterpretJSStringAsAst(jsString string) string {
 	// Parse the JavaScript file
 	input := parse.NewInputString(jsString)
 	ast, _ := js.Parse(input, js.Options{})
 	// Analyse du code javascript et réalisation des modifications si nécessaire
 	js.Walk(&Walker{SettingVariableName: "AppSettings"}, ast)
+	return ast.JSString()
 }
 
 func ExpectToPanic(doesPanic bool, panicMessage string) {
