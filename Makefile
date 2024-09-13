@@ -10,6 +10,10 @@ all: mod inst gen build test
 ci: ## CI build pipeline
 ci: all diff
 
+.PHONY: codeql
+codeql: ## build pipeline
+codeql: mod inst gen build-codeql
+
 .PHONY: help
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -43,6 +47,12 @@ build: ## goreleaser build
 build:
 	$(call print-target)
 	goreleaser build --clean --single-target --snapshot
+
+.PHONY: build-codeql
+build-codeql: ## go build for codeql
+build-codeql:
+	$(call print-target)
+	go build
 
 .PHONY: spell
 spell: ## misspell
