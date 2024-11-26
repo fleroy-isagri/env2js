@@ -5,7 +5,7 @@ go 1.22.2
 require (
 	github.com/fatih/color v1.18.0
 	github.com/onsi/ginkgo/v2 v2.22.0
-	github.com/onsi/gomega v1.35.1
+	github.com/onsi/gomega v1.36.0
 	github.com/stretchr/testify v1.10.0
 	github.com/tdewolff/parse/v2 v2.7.19
 )
