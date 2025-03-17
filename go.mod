@@ -1,13 +1,14 @@
 module github.com/fleroy-isagri/env2js
 
 go 1.22.2
+toolchain go1.24.1
 
 require (
 	github.com/fatih/color v1.18.0
 	github.com/onsi/ginkgo/v2 v2.22.2
 	github.com/onsi/gomega v1.36.2
 	github.com/stretchr/testify v1.10.0
-	github.com/tdewolff/parse/v2 v2.7.20
+	github.com/tdewolff/parse/v2 v2.7.21
 )
 
 require (
